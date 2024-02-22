@@ -13,7 +13,7 @@ class Validate {
         "dob",
       ],
       login: ["email", "password"],
-      update: [""],
+      updatePassword: ["password", "confirmPassword"],
     };
 
     this.warehouseAttr = {
@@ -85,13 +85,25 @@ class Validate {
         return "Required Field managerId";
     };
 
-    this.warehouseRemove = (req) => {
-      const reqFields = new Set(Object.keys(req.body));
-      if (reqFields.size === 0)
-        return "Required Fields `controllerId and warehouseId` or `managerId and warehouseId";
+    this.passwordUpdate = (fields, req) => {
+      // const reqFields = new Set(Object.keys(req.body));
+      // if (reqFields.size === 0)
+      //   return "Required Fields `password and confirmPassword`";
 
-      if (reqFields.has("controllerId") && !reqFields.has("warehouseId"))
-        return "Required Field warehouseId";
+      // if (reqFields.has("password") && !reqFields.has("confirmPassword"))
+      //   return "Required Field warehouseId";
+
+      const reqFields = new Set(Object.keys(req.body));
+      const misFields = fields.filter((k) => !reqFields.has(k));
+
+      if (misFields.length > 0) {
+        return `Required Fields ${misFields.join(", ")}.`;
+      }
+
+      const { password, confirmPassword } = req.body;
+
+      if (password !== confirmPassword)
+        return `Password and ConfirmPassword must be same`;
     };
   }
 
@@ -106,7 +118,16 @@ class Validate {
     login: async (req, res, next) => {
       console.log("Inside user login");
       const misFields = this.missingFields(this.userAttr.login, req);
-      if (misFields) return next(new ErrorHandler(misFields));
+      if (misFields)
+        return next(new ErrorHandler(misFields, StatusCodes.BAD_REQUEST));
+      next();
+    },
+    updatePassword: (req, res, next) => {
+      console.log("Inside user update password");
+      const isAnyError = this.passwordUpdate(this.userAttr.updatePassword, req);
+      if (isAnyError)
+        return next(new ErrorHandler(isAnyError, StatusCodes.BAD_REQUEST));
+
       next();
     },
   };
