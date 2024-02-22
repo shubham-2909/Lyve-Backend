@@ -29,7 +29,7 @@ const random_profile = () => {
   return img_urls[idx];
 };
 const userModel = db.define(
-  "User",
+  "Users",
   {
     email: {
       type: DataTypes.STRING,
@@ -140,7 +140,7 @@ userModel.prototype.getJWTToken = function () {
 };
 
 userModel.prototype.comparePassword = async function (enteredPassword) {
-  return await bcrypt.compare(this.password, enteredPassword);
+  return await bcrypt.compare(enteredPassword, this.password);
 };
 
 userModel.getUpdateFields = function (userData) {

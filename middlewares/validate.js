@@ -1,5 +1,5 @@
 const ErrorHandler = require("../utils/errorHandler");
-
+const { StatusCodes } = require("http-status-codes");
 class Validate {
   constructor() {
     this.userAttr = {
@@ -12,6 +12,7 @@ class Validate {
         "role",
         "dob",
       ],
+      login: ["email", "password"],
       update: [""],
     };
 
@@ -98,19 +99,29 @@ class Validate {
     post: async (req, res, next) => {
       console.log("Inside user validate");
       const misFields = this.missingFields(this.userAttr.create, req);
-      if (misFields) return next(new ErrorHandler(misFields, 400));
+      if (misFields)
+        return next(new ErrorHandler(misFields, StatusCodes.BAD_REQUEST));
+      next();
+    },
+    login: async (req, res, next) => {
+      console.log("Inside user login");
+      const misFields = this.missingFields(this.userAttr.login, req);
+      if (misFields) return next(new ErrorHandler(misFields));
+      next();
     },
   };
 
   warehouse = {
     assign: async (req, res, next) => {
       const misFields = this.warehouseAssign(req);
-      if (misFields) return next(new ErrorHandler(misFields, 400));
+      if (misFields)
+        return next(new ErrorHandler(misFields, StatusCodes.BAD_REQUEST));
       next();
     },
     remove: async (req, res, next) => {
       const misFields = this.warehouseRemove(req);
-      if (misFields) return next(new ErrorHandler(misFields, 400));
+      if (misFields)
+        return next(new ErrorHandler(misFields, StatusCodes.BAD_REQUEST));
       next();
     },
   };
@@ -118,7 +129,8 @@ class Validate {
   order = {
     post: async (req, res, next) => {
       const misFields = this.missingFields(this.orderAttr.create, req);
-      if (misFields) return next(new ErrorHandler(misFields, 400));
+      if (misFields)
+        return next(new ErrorHandler(misFields, StatusCodes.BAD_REQUEST));
       next();
     },
     put: async (req, res, next) => {
@@ -135,7 +147,7 @@ class Validate {
             `Please provide at least one of the fields - ${this.orderAttr.update.join(
               ", "
             )}.`,
-            400
+            StatusCodes.BAD_REQUEST
           )
         );
       }
@@ -144,7 +156,9 @@ class Validate {
     },
     updateStatus: async (req, res, next) => {
       if (!req.body.status) {
-        return next(new ErrorHandler("Please provide the status", 400));
+        return next(
+          new ErrorHandler("Please provide the status", StatusCodes.BAD_REQUEST)
+        );
       }
 
       req.body = Object.fromEntries(
@@ -155,11 +169,18 @@ class Validate {
     item: async (req, res, next) => {
       const { items } = req.body;
       if (!items) {
-        return next(new ErrorHandler("Please provide items.", 400));
+        return next(
+          new ErrorHandler("Please provide items.", StatusCodes.BAD_REQUEST)
+        );
       }
 
       if (!items.length || items.length === 0) {
-        return next(new ErrorHandler("Please add atleast one item.", 400));
+        return next(
+          new ErrorHandler(
+            "Please add atleast one item.",
+            StatusCodes.BAD_REQUEST
+          )
+        );
       }
 
       next();
@@ -168,7 +189,10 @@ class Validate {
       const { quantity, name } = req.body;
       if (!quantity && !name) {
         return next(
-          new ErrorHandler("Missing fields - quantity and name", 400)
+          new ErrorHandler(
+            "Missing fields - quantity and name",
+            StatusCodes.BAD_REQUEST
+          )
         );
       }
       next();
