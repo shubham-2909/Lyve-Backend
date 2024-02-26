@@ -7,7 +7,7 @@ module.exports = {
     console.log("Database con");
     try {
       sequelize.sync();
-      sequelize.sync({ force: true });
+      // sequelize.sync({ force: true });
       await sequelize.authenticate();
       console.log("Connection has been established successfully.");
     } catch (error) {
