@@ -12,20 +12,111 @@ exports.register = catchAsyncError(async (req, res, next) => {
   const imageFile = req.file;
   const imageUrl = imageFile && (await s3Uploadv2(imageFile));
   let user;
+  const prevUser = await userModel.findOne({ email: req.body.email });
 
-  user = imageUrl
-    ? await userModel.create({
-        ...req.body,
-        dob: new Date(dob),
-        avatar: imageUrl.Location,
-      })
-    : await userModel.create({
-        ...req.body,
-        dob: new Date(dob),
-      });
+  if (prevUser && !prevUser.isVerified) {
+    await prevUser.update({ ...req.body });
+    user = prevUser;
+    console.log(prevUser);
+  } else {
+    user = imageUrl
+      ? await userModel.create({
+          ...req.body,
+          dob: new Date(dob),
+          avatar: imageUrl.Location,
+        })
+      : await userModel.create({
+          ...req.body,
+          dob: new Date(dob),
+        });
+  }
 
+  const otp = generateOTP();
+
+  await otpModel.create({
+    otp,
+    userId: user.id,
+  });
+
+  const message = `<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+      /* Add your CSS styles here */
+      body {
+        font-family: Arial, sans-serif;
+      }
+      .container {
+        max-width: 600px;
+        margin: 0 auto;
+        padding: 20px;
+        background-color: #f4f4f4;
+      }
+      h1 {
+        color: #333;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>Welcome to my Lyve Chat</h1>
+      <p>your verification otp is</p><b>${otp}</b>
+    </div>
+  </body>
+  </html>`;
+
+  try {
+    await sendEmail({
+      email: user.email,
+      subject: "Verify Registration OTP",
+      message,
+    });
+    res
+      .status(StatusCodes.CREATED)
+      .json({ message: `OTP sent to ${user.email} successfully` });
+  } catch (error) {
+    return next(
+      new ErrorHandler(error.message, StatusCodes.INTERNAL_SERVER_ERROR)
+    );
+  }
+});
+
+exports.verifyRegisterOTP = catchAsyncError(async (req, res, next) => {
+  const { otp, email } = req.body;
+  if (!otp || !email) {
+    return next(
+      new ErrorHandler("Missing OTP or email", StatusCodes.BAD_REQUEST)
+    );
+  }
+  const otpInstance = await otpModel.findOne({ where: { otp } });
+  const user = await userModel.findOne({ where: { email } });
+
+  if (!user)
+    return next(
+      new ErrorHandler(
+        "User not found please check entered email",
+        StatusCodes.NOT_FOUND
+      )
+    );
+
+  if (!otpInstance || !otpInstance.isValid()) {
+    if (otpInstance) {
+      await otpModel.destroy({ where: { id: otpInstance.id } });
+      await userModel.destroy({ where: { email: email } });
+    }
+    return next(
+      new ErrorHandler(
+        "OTP is invalid or has been expired.",
+        StatusCodes.BAD_REQUEST
+      )
+    );
+  }
+  user.isVerified = true;
+  await user.save();
+  await otpModel.destroy({ where: { id: otpInstance.id } });
   const token = user.getJWTToken();
-  res.status(StatusCodes.CREATED).json({ user, token });
+  res.status(StatusCodes.CREATED).json({ success: true, user, token });
 });
 
 exports.login = catchAsyncError(async (req, res, next) => {

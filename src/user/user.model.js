@@ -29,7 +29,7 @@ const random_profile = () => {
   return img_urls[idx];
 };
 const userModel = db.define(
-  "Users",
+  "User",
   {
     email: {
       type: DataTypes.STRING,
@@ -98,7 +98,10 @@ const userModel = db.define(
         },
       },
     },
-
+    isVerified: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: false,
+    },
     role: {
       type: DataTypes.ENUM("User", "Creator", "Admin"),
       allowNull: false,

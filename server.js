@@ -7,6 +7,7 @@ process.on("uncaughtException", (err) => {
 });
 
 // connecting database
+console.log("Connecting database");
 connectDatabase();
 
 // creating server
