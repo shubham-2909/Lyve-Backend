@@ -9,6 +9,10 @@ const {
   updatePassword,
   getProfile,
   verifyRegisterOTP,
+  updateProfile,
+  followCreator,
+  unfollowCreator,
+  getCreatorFollowers,
 } = require("./user.controller");
 const { user } = require("../../middlewares/validate");
 const { upload } = require("../../utils/s3");
@@ -20,6 +24,11 @@ router.post("/forgot-password", forgotPassword);
 router.post("/verify-otp", verifyOtp);
 router.put("/change-password", user.updatePassword, auth, updatePassword);
 router.put("/reset-password", user.updatePassword, updatePassword);
-router.get("/profile", auth, getProfile);
+router.route("/profile").get(auth, getProfile).put(auth, updateProfile);
 
+//=================================Follow Stuff =====================================================
+router.post("/follow/:creatorId", auth, followCreator);
+router.delete("/unfollow/:creatorId", auth, unfollowCreator);
+
+router.get("/followers", auth, getCreatorFollowers);
 module.exports = router;

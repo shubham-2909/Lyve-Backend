@@ -256,3 +256,118 @@ exports.getProfile = catchAsyncError(async (req, res, next) => {
 
   res.status(StatusCodes.OK).json({ user });
 });
+
+exports.updateProfile = catchAsyncError(async (req, res, next) => {
+  const { userId } = req;
+
+  const updateData = userModel.getUpdateFields(req.body);
+
+  if (Object.keys(updateData).length === 0) {
+    return next(
+      new ErrorHandler(
+        "Please provdide data to update",
+        StatusCodes.BAD_REQUEST
+      )
+    );
+  }
+  console.log(updateData);
+  const [isUpdated] = await userModel.update(updateData, {
+    where: { id: userId },
+  });
+
+  if (isUpdated === 0) {
+    return next(new ErrorHandler("User not found", StatusCodes.NOT_FOUND));
+  }
+
+  res
+    .status(StatusCodes.OK)
+    .json({ message: "Profile Updated Successfully", isUpdated });
+});
+
+exports.deleteUser = catchAsyncError(async (req, res, next) => {
+  const { userId } = req;
+  await userModel.destroy({ where: { id: userId } });
+  res
+    .status(StatusCodes.OK)
+    .json({ success: true, message: "User deleted successfully" });
+});
+
+/* ====================================FOLLOW STUFF==================================================*/
+exports.followCreator = catchAsyncError(async (req, res, next) => {
+  console.log("Follow user", req.params);
+  const {
+    params: { creatorId },
+  } = req;
+
+  const { userId } = req;
+
+  const currUser = await userModel.findByPk(userId);
+
+  const targetCreator = await userModel.findByPk(creatorId);
+
+  if (!targetCreator) {
+    return next(
+      new ErrorHandler("Creator with given id not found", StatusCodes.NOT_FOUND)
+    );
+  }
+
+  const isAlreadyFollowing = await currUser.hasFollowing(targetCreator);
+
+  if (isAlreadyFollowing) {
+    return next(
+      new ErrorHandler(
+        "Already following this creator",
+        StatusCodes.BAD_REQUEST
+      )
+    );
+  }
+
+  await currUser.addFollowing(targetCreator);
+  res
+    .status(StatusCodes.CREATED)
+    .json({ success: true, message: "You are now following this creator" });
+});
+
+exports.unfollowCreator = catchAsyncError(async (req, res, next) => {
+  console.log("Unfollow creator", req.params);
+
+  const { userId } = req;
+
+  const {
+    params: { creatorId },
+  } = req;
+
+  const currUser = await userModel.findByPk(userId);
+  const targetCreator = await userModel.findByPk(creatorId);
+
+  if (!targetCreator) {
+    return next(
+      new ErrorHandler("Creator with given id not found", StatusCodes.NOT_FOUND)
+    );
+  }
+
+  const isAlreadyFollowing = await currUser.hasFollowing(targetCreator);
+  if (!isAlreadyFollowing) {
+    return next(
+      new ErrorHandler(
+        "You are not following this user already",
+        StatusCodes.BAD_REQUEST
+      )
+    );
+  }
+
+  await currUser.removeFollowing(targetCreator);
+
+  res.status(StatusCodes.OK).json({
+    success: true,
+    message: "You have unfollowed this creator successfully",
+  });
+});
+
+exports.getCreatorFollowers = catchAsyncError(async (req, res, next) => {
+  const { userId } = req;
+  const currCreator = await userModel.findByPk(userId, {
+    include: [{ model: userModel, as: "followers" }],
+  });
+  res.status(StatusCodes.OK).json({ followers: currCreator.followers });
+});

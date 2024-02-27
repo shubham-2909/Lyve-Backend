@@ -200,4 +200,15 @@ otpModel.prototype.isValid = async function (givenOTP) {
 userModel.hasOne(otpModel, { foreignKey: "userId", as: "otp" });
 otpModel.belongsTo(userModel, { foreignKey: "userId", as: "user" });
 
+userModel.belongsToMany(userModel, {
+  foreignKey: "following_user_id",
+  as: "followers",
+  through: "Follow",
+});
+userModel.belongsToMany(userModel, {
+  foreignKey: "follower_user_id",
+  as: "following",
+  through: "Follow",
+});
+
 module.exports = { userModel, otpModel };

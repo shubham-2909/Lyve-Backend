@@ -4,7 +4,6 @@ const sequelize = new Sequelize(process.env.URI, { dialect: "postgres" });
 
 module.exports = {
   connectDatabase: async () => {
-    console.log("Database con");
     try {
       sequelize.sync();
       // sequelize.sync({ force: true });
