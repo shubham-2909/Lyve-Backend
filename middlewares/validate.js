@@ -86,13 +86,6 @@ class Validate {
     };
 
     this.passwordUpdate = (fields, req) => {
-      // const reqFields = new Set(Object.keys(req.body));
-      // if (reqFields.size === 0)
-      //   return "Required Fields `password and confirmPassword`";
-
-      // if (reqFields.has("password") && !reqFields.has("confirmPassword"))
-      //   return "Required Field warehouseId";
-
       const reqFields = new Set(Object.keys(req.body));
       const misFields = fields.filter((k) => !reqFields.has(k));
 

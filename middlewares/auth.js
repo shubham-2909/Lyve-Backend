@@ -1,6 +1,7 @@
 const jwt = require("jsonwebtoken");
 const { userModel, roleModel } = require("../src/user/user.model");
 const ErrorHandler = require("../utils/errorHandler");
+const { StatusCodes } = require("http-status-codes");
 
 exports.auth = async (req, res, next) => {
   console.log(req.headers.authorization);
@@ -31,31 +32,22 @@ exports.auth = async (req, res, next) => {
 exports.authRole = (roles) => async (req, res, next) => {
   try {
     const userId = req.userId;
-    const user = await userModel.findByPk(userId, {
-      include: [
-        {
-          model: roleModel,
-          as: "userRole",
-          attributes: ["role"],
-        },
-      ],
-      attributes: {
-        exclude: ["roleId"],
-      },
-    });
-
-    console.log("inside is admin");
-    // , userId, user.dataValues);
+    const user = await userModel.findByPk(userId);
     if (!user)
-      return next(new ErrorHandler("Invalid token. User not found.", 404));
+      return next(
+        new ErrorHandler(
+          "Invalid token. User not found.",
+          StatusCodes.NOT_FOUND
+        )
+      );
 
-    if (!roles.includes(user.userRole?.role))
-      return next(new ErrorHandler("Restricted.", 401));
+    if (!roles.includes(user.role))
+      return next(new ErrorHandler("Restricted.", StatusCodes.UNAUTHORIZED));
 
     req.user = user;
 
     next();
   } catch (error) {
-    return next(new ErrorHandler("Unauthorized.", 401));
+    return next(new ErrorHandler("Unauthorized.", StatusCodes.UNAUTHORIZED));
   }
 };

@@ -229,14 +229,36 @@ exports.updatePassword = catchAsyncError(async (req, res, next) => {
 
   const userId = req.userId || req.body.userId;
 
-  const { password } = req.body;
-
-  const user = await userModel.findOne({ where: { id: userId } });
+  const user = await userModel
+    .scope("withPassword")
+    .findOne({ where: { id: userId } });
 
   if (!user) {
     return next(new ErrorHandler("User not found", StatusCodes.NOT_FOUND));
   }
 
+  const { password, oldPassword } = req.body;
+  if (req.userId && !req.body.oldPassword) {
+    return next(
+      new ErrorHandler(
+        "Please enter your old password to update",
+        StatusCodes.BAD_REQUEST
+      )
+    );
+  }
+
+  if (oldPassword) {
+    console.log("old Password", oldPassword);
+    const isMatch = await user.comparePassword(oldPassword);
+    if (!isMatch) {
+      return next(
+        new ErrorHandler(
+          "Password does not match with old password",
+          StatusCodes.UNAUTHORIZED
+        )
+      );
+    }
+  }
   user.password = password;
 
   await user.save();
