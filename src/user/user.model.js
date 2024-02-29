@@ -34,16 +34,23 @@ const userModel = db.define(
     email: {
       type: DataTypes.STRING,
       allowNull: false,
-      unique: {
-        args: true,
-        msg: "Email already in use!",
-      },
       validate: {
         notNull: { msg: "Email is required" },
         notEmpty: { msg: "Email is required" },
         isEmail: function (value) {
           if (value !== "" && !validateEmail(value)) {
             throw new Error("Invalid Email Address");
+          }
+        },
+        isUnique: async function (value) {
+          const existingUser = await userModel.findOne({
+            where: {
+              email: value,
+              deletedAt: null,
+            },
+          });
+          if (existingUser) {
+            throw new Error("Email already in use!");
           }
         },
       },
@@ -71,13 +78,20 @@ const userModel = db.define(
     mobile_no: {
       type: DataTypes.STRING,
       allowNull: false,
-      unique: {
-        args: true,
-        msg: "Phone number is already in use",
-      },
       validate: {
         notNull: { msg: "Phone is required" },
         notEmpty: { msg: "Phone is required" },
+        isUnique: async function (value) {
+          const existingUser = await userModel.findOne({
+            where: {
+              mobile_no: value,
+              deletedAt: null,
+            },
+          });
+          if (existingUser) {
+            throw new Error("Email already in use!");
+          }
+        },
       },
     },
     country: {

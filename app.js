@@ -21,8 +21,11 @@ app.get("/", (req, res, next) => res.json({ message: "Server is running" }));
 
 //use all router here
 const { userRoute } = require("./src");
-
+const { eventRouter } = require("./src");
+const { adminRouter } = require("./src");
 app.use("/api/users", userRoute);
+app.use("/api/events", eventRouter);
+app.use("/api/admin", adminRouter);
 
 app.all("*", async (req, res) => {
   res.status(404).json({

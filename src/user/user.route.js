@@ -32,4 +32,5 @@ router.delete("/delete", auth, deleteUser);
 router.post("/follow/:creatorId", auth, followCreator);
 router.delete("/unfollow/:creatorId", auth, unfollowCreator);
 router.get("/followers", auth, getCreatorFollowers);
+
 module.exports = router;
